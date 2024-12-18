@@ -1,0 +1,148 @@
+---
+title: "Homework 4"
+author: "Raul Torres Aragon"
+date: "10/3/2023"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#load("hw3_en.Rdata")
+```
+
+# Q1  
+# (a)  
+Prove that Newton's method finds the minimum in one iteration of a quadratic function  
+$$
+f(\boldsymbol{\theta}) = \frac{1}{2}\boldsymbol{\theta}^TA\boldsymbol{\theta} + \boldsymbol{b}^T\boldsymbol{\theta}+c
+$$  
+
+where $\boldsymbol{b}^T$ is a vector of constants and $c$ is an arbitrary scalar.  
+
+The minimum of a double-differentiable quadratic function $f$ in $\mathbb{R}^n$ where $A$ is PSD is found when $f'(\boldsymbol{\theta})=0$.  
+
+So, 
+
+$$
+\begin{aligned}
+f(\boldsymbol{\theta}) &= \frac{1}{2}\boldsymbol{\theta}^TA\boldsymbol{\theta} + \boldsymbol{b}^T\boldsymbol{\theta}+c \\
+f(\boldsymbol{\theta}) &= \frac{2}{2}A\boldsymbol{\theta} + \boldsymbol{b}^T = A\boldsymbol{\theta} + \boldsymbol{b}^T \\
+f''(\boldsymbol{\theta}) &= A 
+\end{aligned}
+$$  
+Now, one step of Newton's method entails:  
+$$
+\begin{aligned}
+\boldsymbol{\theta}_1 &= \boldsymbol{\theta}_0 - f''(\boldsymbol{\theta}_0)^{-1}f(\boldsymbol{\theta}_0) \\
+&= \boldsymbol{\theta}_0 - A^{-1}(A\boldsymbol{\theta}_0 + \boldsymbol{b}^T) \\
+&= -A^{-1}\boldsymbol{b}^T
+\end{aligned}
+$$  
+
+So,  
+$$
+f'(\boldsymbol{\theta}_1) = f'(-A^{-1}\boldsymbol{b}^T) = -AA^{-1}\boldsymbol{b}^T+\boldsymbol{b}^T = 0
+$$  
+Hence, we see that for convex ($A\prec0$) double-differential quadratic functions, Newton's method reaches the minimum in one iteration.  
+
+# (b)  
+Minimize the function below using Newton's method:  
+$$
+f(\theta_1, \theta_2) = \theta_1 - \theta_2 + 2\theta_1^2 + 2\theta_1 \theta_2 + \theta_2^2
+$$  
+Does this problem confirm the assertion in part (a) above?  
+
+In order to minimize this function via Newton's method we first need to obtain $f(\theta_1, \theta_@$, $f'(\theta_1,\theta_2)$.  
+
+Taking the first and second derivatives from $f(\theta_1, \theta_2)$ yields the following gradient and Hessian matrix.  
+
+$$
+\begin{aligned}
+\nabla f(\theta_1, \theta_2) &= 
+\begin{bmatrix}  
+1+4\theta_!+2\theta_2 & -1+2\theta_1+2\theta_2
+\end{bmatrix}^T \\
+H^{-1} &= 
+\begin{bmatrix} 
+4 & 2 \\
+2 & 2
+\end{bmatrix}^{-1} = 
+\begin{bmatrix} 
+\frac{1}{2} & -\frac{1}{2} \\
+-\frac{1}{2} & 1
+\end{bmatrix}
+\end{aligned}
+$$  
+After one iteration of Newton's method, we get:  
+
+$$
+\boldsymbol{\theta}_1 = \begin{bmatrix}
+\theta_{1_0} \\ \theta_{2_0} 
+\end{bmatrix} - H^{-1}\times\nabla f(\theta_{1_0}, \theta_{2_0}) =  
+\begin{bmatrix}
+-1 \\ 1.5
+\end{bmatrix}
+$$  
+Plugging $\boldsymbol{\theta}_1$ in $\nabla f(\theta_{1}, \theta_{2})$ yields $\boldsymbol{0}$, which confirms the assertion in part (a) above.  
+
+# Q2  
+A quantal response model involves independent binomial observations $y_1 \dots y_m$ with $n_1$ trials and success probability $\pi_i(\boldsymbol{\theta})$ per trial for the i-th observation. If $\boldsymbol{x}_i$ is a covariate vector and $\boldsymbol{\theta}$ a parameter vector, then the specification  
+$$
+\pi_i(\boldsymbol{\theta}) = \frac{e^{\boldsymbol{x}_i^T\boldsymbol{\theta}}}{1+e^{\boldsymbol{x}_i^T\boldsymbol{\theta}}}
+$$  
+gives the generalized linear model. Estimate $\hat{\boldsymbol{\theta}}$ for the data displayed in Table 1 below.  
+```{r, fig.align='center', out.width="50%", echo=FALSE}
+knitr::include_graphics("table1_hw4.png")
+```
+
+
+In this situation we have  
+$$
+\begin{aligned}
+\hat{\mu_i} &= \frac{\exp(\boldsymbol{x}_i^T\boldsymbol{\theta})}{1+\exp(\boldsymbol{x}_i^T\boldsymbol{\theta})}\\
+g(\mu_i) &= log\bigg(\frac{\mu_i}{1-\mu_i}\bigg) = \boldsymbol{x}_i^T\boldsymbol{\theta} \\
+g'(\mu_i) &= \frac{1}{\mu_i(1-\mu_i)} \\
+V(\mu_i) &= n_i\mu_i(1-\mu_i) \\
+z_i &= g(\hat{\mu}_i) + (y_i-\hat{\mu_i})g'(\hat{\mu_i}) \\
+&= \boldsymbol{x}_i^T\boldsymbol{\theta}+\bigg(y_i-\frac{\exp(\boldsymbol{x}_i^T\boldsymbol{\theta})}{1+\exp(\boldsymbol{x}_i^T\boldsymbol{\theta})}\bigg) \frac{1}{\exp(x_i^T\theta)(1-\exp(x_i^T\theta))}\\
+w_{ii} &= \{g'(\mu_i)^2V(\mu_i)\}^{-1}\\
+&= \frac{\hat{\mu_i}(1-\hat{\mu_i)}}{n_i}
+\end{aligned}
+$$  
+Implementing the above in R, as follows:  
+
+```{r}
+# Problem 2 (Fischer's Scoring algo)
+n1 <- 55; n2 <- 157; n3 <- 159; n4 <- 16
+Y <- rep(0, n1+n2+n3+n4)
+Y[(n1+1):(n1+2)] <- 1
+Y[(n1+n2+1):(n1+n2+7)] <- 1
+Y[(n1+n2+n3+1):(n1+n2+n3+3)] <- 1
+X1 <- rep(1, n1+n2+n3+n4)
+X2 <- c(rep(7, n1), rep(14, n2), rep(27, n3), rep(57, n4))
+X  <- matrix(c(X1,X2), nrow=n1+n2+n3+n4)
+glm(Y~X[,2], family = "binomial")
+
+theta_0 <- matrix(c(.01,.01), nrow=2)
+score_algo <- function(theta, X, Y, n1, n2, n3, n4, its=5) {
+  for(i in 1:its) {
+    X2 <- X[,2]
+    mu <- exp(X%*%theta)/(1+exp(X%*%theta))
+    Z <- X%*%theta + (Y-mu)*1/(mu*(1-mu))
+    W <- (mu*(1-mu)) / c(rep(n1,n1),rep(n2,n2),rep(n3,n3),rep(n4,n4))
+    theta_new <- lm(Z~X2, weights = W) |> coefficients() |> as.matrix() |> unname()
+    theta <- theta_new
+  }
+  theta_new
+}
+
+theta_hat <- score_algo(theta_0, X, Y, n1, n2, n3, n4, its = 10)
+```  
+
+and after 10 iterations yields: $\hat{\theta_1}=$ `r theta_hat[1,1]` and $\hat{\theta_2}=$ `r theta_hat[2,1]` which is a good approximation to `glm`'s results.  
+
+
+
+
+
+

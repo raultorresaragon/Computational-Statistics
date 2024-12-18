@@ -1,0 +1,354 @@
+---
+title: "Homework 6"
+author: "Raul Torres Aragon"
+date: "10/16/2023"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+load("hw6_en.Rdata")
+```
+
+```{r, fig.align='center', out.width="64%", echo=FALSE}
+#knitr::include_graphics("hw5_table1.png")
+```  
+
+
+
+# Q1  
+Consider the $k$-component mixture model for the observations $x_1, \dots, x_n$:  
+$$
+f(x_i) = \sum_{j=1}^Kp_j\phi(x_i;\mu_j, \sigma), \text{ } i=1,\dots,n,
+$$  
+
+where  
+
+$$
+\phi(x_i;\mu_j,\sigma)=\frac{1}{\sqrt{2\pi\sigma^2}}
+\exp\bigg\{ -\frac{1}{2}\bigg( \frac{x_i-\mu_j}{\sigma}\bigg)^2 \bigg\},
+$$  
+and $\mu_j,p_j$ and $\sigma$ are unknown, $\sum_{i=1}^K p_j=1$ and $0<p_j<1$.  
+Let $\boldsymbol{z}_1, \dots, \boldsymbol{z}_n$ denote $k$-dimensional vectors indicating to which component $x_i$ belongs, such that $z_{ij} \in (0,1)$ and 
+$\sum_{i=1}^K z_{ij}=1$. The augmented likelihood is then  
+
+$$
+\prod_{j=1}^Kp^{z_{ij}}\{ \phi(x_i; \mu_j \sigma) \}^{z_{ij}}
+$$  
+
+## (a)  
+Derive the $Q$ function for this problem. What is the $E$-step? What is the $M$-step?  
+
+The $Q$ function is $E_{\theta_0}(\log L^c(\theta|x,z)|\theta_0,x)$.  
+Recall our augmented (or complete) data is $\prod_{j=1}^Kp^{z_{ij}}\{ \phi(x_i; \mu_j \sigma) \}^{z_{ij}}$. Thus taking the log of it:  
+$$
+\begin{aligned}
+L^c &= \prod_{i=1}^n \prod_{j=1}^Kp^{z_{ij}}\{ \phi(x_i; \mu_j \sigma) \}^{z_{ij}} \\
+\log L^c &= \log \bigg( \prod_{i=1}^n \prod_{j=1}^Kp^{z_{ij}}\{ \phi(x_i; \mu_j \sigma) \}^{z_{ij}}\bigg) \\
+&= \sum_{i=1}^n \sum_{j=1}^K z_{ij}p_j\{ \phi(x_i;\mu_j, \sigma) \} \\
+Q(\theta|\theta_0,x_i) &= E\bigg[ \sum_{i=1}^n \sum_{j=1}^K z_{ij}\log p_j\{ \phi(x_i;\mu_j, \sigma) \} \bigg]
+\end{aligned} 
+$$  
+The E-step involves taking the expectation $E_{\theta_0}(Q)$, while  holding our $\mu_j$, $p_j$, and $\sigma$ parameters constant ($\boldsymbol{\theta}_0$), as well as $X$. So, basically, we take the expectation of $z$.  
+$$
+\begin{aligned}
+E\bigg[ \sum_{i=1}^n \sum_{j=1}^K z_{ij}\log p_j\{ \phi(x_i;\mu_j, \sigma) \}\bigg] \\
+\sum_{i=1}^n \sum_{j=1}^K \log p_j\{ \phi(x_i;\mu_j, \sigma) \} E(z_{ij})
+\end{aligned}
+$$  
+Now, since $z_{ij} \in \{0,1\}$, its expectation is $P(z_{ij}=1)$, thus  
+$$
+\begin{aligned}
+E_{\boldsymbol{\theta}_0} &= P(z_{ij}=1|\boldsymbol{\theta}_0,x) \\
+&=_{\text{Bayes}} \frac{P(\boldsymbol{\theta}_0,x_i|z_{ij})P(z_{ij})}{\sum_{i=1}^K P(\boldsymbol{\theta}_0,x_i|z_{ij})} \\
+&= \frac{p_j\phi(x_i;\boldsymbol{\theta}_0)}{\sum_{j=1}^K p_j\phi(x_i;\boldsymbol{\theta}_0)} \\
+&= \gamma_{ij}(\boldsymbol{\theta_0})
+\end{aligned}  
+$$  
+
+Thus, $Q(\theta|\theta_0,x) = \sum_{i=1}^n \bigg(\sum_{j=1}^K \log p_j\{ \phi(x_i;\mu_j, \sigma) \} \gamma_{ij}\bigg)$
+
+The M step involves maximizing, $E_{\boldsymbol{\theta}_0}$ subject to $\sum_{j=1}^Kp_j=1$. Thus, we have to use Lagrange multipliers to maximize this function subject to our $\sum_{j=1}^K p_j=1$ constraint.  
+
+Recall in Lagrange Optimization we set:  
+$$
+\begin{aligned}
+\nabla \gamma_{ij}(\boldsymbol{\theta}_{(0)}) &= \lambda \nabla \sum_{i=1}^n p_j \\
+\sum_{i=1}^n p_j&=1
+\end{aligned}
+$$
+
+
+first get the gradient, set it to zero, and solve for $\boldsymbol{\theta}$ and then get the Lagragian $\log L(\boldsymbol{\theta}) + \eta(\sum_{j=1}^Kp_j-1)$.  
+
+So,  
+$$
+\begin{aligned}
+\frac{\partial l(\theta)}{\partial \mu_j} &= \sum_{i=1}^n \gamma_{ij}\frac{x-\mu_j}{\sigma^2_j} :=0\\
+\hat{\mu}_j^{(0)} &= \frac{\sum_{i=1}^n\gamma_{ij}(\boldsymbol{\theta}_{(0)})x_i}{\sum_{i=1}^n\gamma_{ij}(\boldsymbol{\theta}_{(0)})} \\
+\frac{\partial l(\theta)}{\partial \sigma_j} &= \sum_{i=1}^n \gamma_{ij}(\boldsymbol{\theta}_{(0)}) \bigg\{  \phi(x|\theta_j)\frac{(x-\mu_j)^2}{\sigma^3_j} - \frac{1}{\sigma_j} \bigg\} :=0\\
+\hat{\sigma^2}^{(0)} &= \frac{\sum_{1=1}^n \gamma_{ij}(\boldsymbol{\theta}_{(0)})(x_i-\mu_j)^2}{\sum_{i=1}^n \gamma_{ij}(\boldsymbol{\theta}_{(0)})} \\
+\frac{\partial l(\theta)}{\partial p_j} &= \sum_{i=1}^n \frac{\phi(x|\boldsymbol{\theta}_0)}{\sum_{j=1}^K p_{j} \phi(x|\boldsymbol{\theta}_0)} + \lambda:=0\\ 
+\hat{p_j} &= n^{-1}\sum_{i=1}^n \gamma_{ij}(\boldsymbol{\theta}_{(0)})
+\end{aligned} \\
+$$  
+
+
+
+## (b)  
+The following table represents the velocities at which 82 galaxies in the Corona Borealis region are moving away from our galaxy. If the galaxies are clustered, then the density of the velocities will be multimodal. Fit the above model to these data using the EM algorithm. Take $K=3$.  
+How did you assess convergence?  
+How many iterations were required for convergence?  
+Try several randomly selected starting points for the algorithm.  
+Is there evidence that the observed likelihood is multimodal?  
+
+From above, we have that the iterates are:  
+$$
+\begin{aligned}
+\boldsymbol{\theta}^{(j+1)} &= 
+\begin{bmatrix}
+\hat{\mu}_j^{(j)} && 
+\hat{\sigma^2}^{(j)} && 
+\hat{p_j} 
+\end{bmatrix} \\
+&=
+\begin{bmatrix}
+\frac{\sum_{i=1}^n\gamma_{ij}(\boldsymbol{\theta}_{(j)})x_i}{\sum_{i=1}^n\gamma_{ij}(\boldsymbol{\theta}_{(0)})} && 
+\frac{\sum_{1=1}^n \gamma_{ij}(\boldsymbol{\theta}_{(j)})(x_i-\mu_j)^2}{\sum_{i=1}^n \gamma_{ij}(\boldsymbol{\theta}_{(j)})} && 
+n^{-1}\sum_{i=1}^n \gamma_{ij}(\boldsymbol{\theta}_{(j)})
+\end{bmatrix}
+\end{aligned}
+$$
+
+```{}
+vel<-c(9172 , 9350, 9558, 9775,10406,16084,18419,18552,18927,19052,19330,
+       19343,19440,19473,19541,19547,19846,19856,19914,19918,19989,20166,
+       20179,20196,20221,20415,20795,20821,20875,20986,21492,21701,21921,
+       21960,22209,22242,22314,22374,22746,22747,22914,23206,23263,23484,
+       23542,23666,23711,23413,24289,24366,24990,25633,26995,32065,34279,
+       9483 ,10227,16170,18600,19070,19349,19529,19663,19863,19973,20175,
+       20215,20629,20846,21137,21814,21185,22249,22495,22888,23241,23538,
+       23706,24285,24717,26960,32789)
+
+plot(density(vel), main = "Density of galaxy velocities")
+
+x <- vel
+
+sum.finite <- function(x){ sum(x[is.finite(x)]) }
+
+Q <- function(mu1, mu2, mu3, p1, p2, p3, sigma1, sigma2, sigma3){
+  
+  pj_norm_sum <- (p1 * dnorm(x, mu1, sigma1)) + 
+                 (p2 * dnorm(x, mu2, sigma2)) + 
+                 (p3 * dnorm(x, mu3, sigma3))
+  
+  gamma1 <- p1*dnorm(x, mu1, sigma1)/(pj_norm_sum)
+  gamma2 <- p2*dnorm(x, mu2, sigma2)/(pj_norm_sum)
+  gamma3 <- p3*dnorm(x, mu3, sigma3)/(pj_norm_sum)
+  
+  sum.finite(gamma1 * (log(p1) -log(sigma1*sqrt(2*pi)) - ((x-mu1)^2/(2*sigma1^2))) + 
+             gamma2 * (log(p2) -log(sigma2*sqrt(2*pi)) - ((x-mu2)^2/(2*sigma2^2))) +   
+             gamma3 * (log(p3) -log(sigma3*sqrt(2*pi)) - ((x-mu3)^2/(2*sigma3^2)))
+  )
+  
+}
+
+K <- 3
+theta_start <- list(m1 = 2502,
+                    m2 = 5005,
+                    m3 = 3966,
+                    sigma1 = 4220,
+                    sigma2 = 3691,
+                    sigma3 = 5123,
+                    p1 = 0.3,
+                    p2 = 0.4,
+                    p3 = 0.3)
+
+EM_me <- function(criterion = 0.05, x) {
+  
+  mu1 = theta_start[[1]]
+  mu2 = theta_start[[2]]
+  mu3 = theta_start[[3]]
+  sigma1 = theta_start[[4]]
+  sigma2 = theta_start[[5]]
+  sigma3 = theta_start[[6]]
+  p1 = theta_start[[7]]
+  p2 = theta_start[[8]]
+  p3 = theta_start[[9]]
+  
+  Q_start <- Q(mu1, mu2, mu3, p1, p2, p3, sigma1, sigma2, sigma3)
+  print(paste0("Q start = ", Q_start))
+  
+  I = 0
+  Qval = Q_start + 1
+  while(abs(Q_start - Qval)>=criterion) {
+    I <- I + 1
+    pj_norm_sum <- (p1 * dnorm(x, mu1, sigma1)) + 
+                   (p2 * dnorm(x, mu2, sigma2)) + 
+                   (p3 * dnorm(x, mu3, sigma3))
+  
+    gamma1 <- p1*dnorm(x, mu1, sigma1) / pj_norm_sum
+    gamma2 <- p2*dnorm(x, mu2, sigma2) / pj_norm_sum
+    gamma3 <- p3*dnorm(x, mu3, sigma3) / pj_norm_sum
+
+    mu1 <- sum.finite(gamma1*x) / sum.finite(gamma1)
+    mu2 <- sum.finite(gamma2*x) / sum.finite(gamma2)
+    mu3 <- sum.finite(gamma3*x) / sum.finite(gamma3)
+  
+    sigma1 <- sqrt(sum.finite((gamma1*(x-mu1)^2)) / sum.finite(gamma1))
+    sigma2 <- sqrt(sum.finite((gamma2*(x-mu1)^2)) / sum.finite(gamma2))
+    sigma3 <- sqrt(sum.finite((gamma3*(x-mu1)^2)) / sum.finite(gamma3))
+  
+    p1     <- sum.finite(gamma1)/length(x)
+    p2     <- sum.finite(gamma2)/length(x)
+    p3     <- sum.finite(gamma3)/length(x)
+
+  }
+  print(paste0("after ", I, " iterations we get Q=", Qval))
+  
+  res <- list(Qstart = Q_start, 
+              Qfinal = Qval, 
+              p1=p1, p2=p2, p3=p3, 
+              mu1=mu1, mu2=mu2, mu3=mu3, 
+              sigma1=sigma1, sigma2=sigma2, sigma3=sigma3)
+  return(res)
+}
+```  
+
+
+```{r, fig.align='center', out.width='50%'}
+plot(density(vel), main = "Density of galaxy velocities")
+```
+
+When comparing this to R's `mixtools::normalmixEM` I get a different likelihood, different values for $\boldsymbol{\mu}$, $\boldsymbol{\sigma}$, and $\boldsymbol{p}$, which tells me there's something I'm either not coding right, or not getting right.  
+Here are my results:
+
+```{r}
+print(myresults)
+```  
+
+And here are `mixtools`'s results:
+
+```{r}
+print(gm$mu)
+print(gm$sigma)
+print(gm$lambda)
+print(gm$all.loglik)
+```
+
+My loglikelihood did not go into the -700s. I reached -822.0623 in over 100 iterations, while `mixxtools` reached -796.5. Furthermore, my code makes the chances of assigning a value to k=3 very high (p3=0.959) whereas `mixtools` assigns p3=0.878. My means and sds also differ. 
+
+Based on these results I would venture to say this is not multimodal, but single modal--given the large probability of being category 3.  
+
+## (c)  
+Obtain standard errors using Louis' method  
+
+We know through Information theory that $var(\boldsymbol{\hat{\theta}}) = \mathcal{I}_{\boldsymbol{\theta}}^{-1}$:    
+$$
+\mathcal{I}_{\boldsymbol{\theta}}^{-1} = 1/E\bigg\{-\frac{\partial^2L(\boldsymbol{\theta | x})}{\partial \boldsymbol{\theta}^2} \bigg\}
+$$  
+
+By Louis 1982 we have:  
+
+$$
+-\frac{\partial^2 l(\boldsymbol{\theta})}{\partial \boldsymbol{\theta}^2} = -E_{\theta_0}\frac{\partial^2 l(\boldsymbol{\theta}|x,z)}{\partial \boldsymbol{\theta}^2} - \text{Var}_{\theta_0}\bigg(\frac{\partial l(\boldsymbol{\theta}|x,z)}{\partial \boldsymbol{\theta}}\bigg) \implies \\
+\text{Var}_{\theta_0}\bigg(\frac{\partial l(\boldsymbol{\theta}|x,z)}{\partial \boldsymbol{\theta}}\bigg) = \frac{\partial^2 l(\boldsymbol{\theta})}{\partial \boldsymbol{\theta}^2} -E_{\theta_0}\frac{\partial^2 l(\boldsymbol{\theta}|x,z)}{\partial \boldsymbol{\theta}^2}
+$$  
+
+Thus
+
+$$
+\begin{aligned}
+\text{Var}(\frac{\partial l^c(\boldsymbol{\theta}_0)}{\partial \mu_j}) &= \text{Var}(\sum_{i=1}^n z_{ij}(x_i-\hat{\mu}_j)1/\sigma^2) \\
+&= \sum_{i=1}^n (x_i-\hat{\mu}_j)1/\sigma^2) \text{Var}(z_{ij})
+\end{aligned}
+$$  
+Recall $E(z_{ij})=\gamma_{ij}(\boldsymbol{\theta}_0)$, so, to compute the second moment of $P_z$ we get:  
+$$
+P(z_{ij}^2) = \frac{f(x_i|z_{ij}^2, \boldsymbol{\theta}_0)\phi(x_i|\boldsymbol{\theta}_0)}
+{\sum_{j=1}^Kf(x_i|z_{ij}^2, \boldsymbol{\theta}_0)\phi(x_i|\boldsymbol{\theta}_0)}
+$$  
+
+So,
+$$
+\begin{aligned}
+\text{Var}(z_{ij}) &= \frac{f(x_i|z_{ij}^2, \boldsymbol{\theta}_0)\phi(x_i|\boldsymbol{\theta}_0)}
+{\sum_{j=1}^Kf(x_i|z_{ij}^2, \boldsymbol{\theta}_0)\phi(x_i|\boldsymbol{\theta}_0)} - \gamma_{ij}^2(\boldsymbol{\theta}_0) \\
+&= \frac{f(x_i|z_{ij}^2, \boldsymbol{\theta}_0)\phi(x_i|\boldsymbol{\theta}_0)}
+{\sum_{j=1}^Kf(x_i|z_{ij}^2, \boldsymbol{\theta}_0)} - \bigg(\frac{f(x_i|z_{ij}, \boldsymbol{\theta}_0)\phi(x_i|\boldsymbol{\theta}_0)}
+{\sum_{j=1}^Kf(x_i|z_{ij}^2, \boldsymbol{\theta}_0)} \bigg)^2
+\end{aligned}
+$$
+So,  
+$$
+\text{Var}(\frac{\partial l(\boldsymbol{\theta}_0)}{\partial \mu_j}) = \sum_{i=1}^n (x_i-\hat{\mu}_j)1/\sigma^2)\frac{f(x_i|z_{ij}^2, \boldsymbol{\theta}_0)\phi(x_i|\boldsymbol{\theta}_0)}
+{\sum_{j=1}^Kf(x_i|z_{ij}^2, \boldsymbol{\theta}_0)} - \bigg(\frac{f(x_i|z_{ij}, \boldsymbol{\theta}_0)\phi(x_i|\boldsymbol{\theta}_0)}
+{\sum_{j=1}^Kf(x_i|z_{ij}^2, \boldsymbol{\theta}_0)} \bigg)^2
+$$  
+
+Thus, 
+$$
+\begin{aligned}
+\text{Var}(\hat{\mu}_j) &= \bigg[\frac{\partial^2l^c}{\partial \mu_j^2}-\text{Var}(\frac{\partial l(\boldsymbol{\theta}_0)}{\partial \mu_j}) \bigg]^{-1} \\  
+&=\sum_{i=1}^n\sum_{j=1}^K \gamma_{ij}(\hat{\boldsymbol{\theta}})1/\sigma^2 - \sum_{i=1}^n (x_i-\hat{\mu}_j)1/\sigma^2)\frac{f(x_i|z_{ij}^2, \boldsymbol{\theta}_0)\phi(x_i|\boldsymbol{\theta}_0)}
+{\sum_{j=1}^Kf(x_i|z_{ij}^2, \boldsymbol{\theta}_0)} - \bigg(\frac{f(x_i|z_{ij}, \boldsymbol{\theta}_0)\phi(x_i|\boldsymbol{\theta}_0)}
+{\sum_{j=1}^Kf(x_i|z_{ij}^2, \boldsymbol{\theta}_0)} \bigg)^2
+\end{aligned}
+$$  
+
+Taking the square root of the above expression yields the standard error of $\hat{\mu}_j$.  
+
+Following the same process but this time for $\hat{\sigma}$, we obtain:  
+
+$$
+\begin{aligned}
+\text{Var}\bigg( \frac{\partial l^c}{\partial\sigma} \bigg) &= \text{Var}\bigg(\sum_{i=1}^n \sum_{j=1}^K z_{ij} ([x_i-\hat{\mu}_j]^2/\hat{\sigma}^3-1/\hat{\sigma}) \bigg) \\
+&= \sum_{i=1}^n \sum_{j=1}^K ([x_i-\hat{\mu}_j]^2/\hat{\sigma}^3-1/\hat{\sigma})^2 \text{Var}(z_{ij})
+\end{aligned}
+$$  
+
+Thus,
+$$
+\text{Var}(\hat{\sigma}) = \frac{1}{\sum_{i=1}^n \sum_{j=1}^K \gamma_{ij}(\boldsymbol{\hat{\theta}}) (x_i-\hat{\mu}_j)^2/\hat{\sigma}^4 - 1/\hat{\sigma}^2 - \sum_{i=1}^n \sum_{j=1}^K ([x_i-\hat{\mu}_j]^2/\hat{\sigma}^3-1/\hat{\sigma})^2 \text{Var}(z_{ij})}  
+$$  
+where, as shown above, 
+$$ 
+Var(z_{ij}) = \frac{f(x_i|z_{ij}^2, \boldsymbol{\theta}_0)\phi(x_i|\boldsymbol{\theta}_0)}
+{\sum_{j=1}^Kf(x_i|z_{ij}^2, \boldsymbol{\theta}_0)} - \bigg(\frac{f(x_i|z_{ij}, \boldsymbol{\theta}_0)\phi(x_i|\boldsymbol{\theta}_0)}
+{\sum_{j=1}^Kf(x_i|z_{ij}^2, \boldsymbol{\theta}_0)} \bigg)^2
+$$  
+
+Taking the square root of the above expression leads to the standard error of $\hat{\sigma}^2$.  
+
+## (d)  
+Fit the above mixture model to these data using Newton's method. Compare these results to those in (b) and (c).  
+
+
+```{r, fig.align='center', out.width="67%", echo=FALSE}
+knitr::include_graphics("hw6_tab1.png")
+```  
+
+
+# Q2  
+
+Prove Louis (1982) result (using notiation from lecture notes):  
+
+$$
+-\frac{\partial^2}{\partial \theta^2}\log L(\theta|\boldsymbol{x}) = -\int_z
+\frac{\partial^2}{\partial \theta^2} \log L(\theta|\boldsymbol{x,z})k(\boldsymbol{z|x},\theta) 
+-var_{\theta_0}\bigg \{ \frac{\partial^2}{\partial \theta^2}\log L(\theta|\boldsymbol{x,z}) \bigg\}
+$$  
+
+Using the Genetic Linkage in lecture 6, show that,  
+$$
+-\frac{\partial^2 Q(\theta|\hat{\theta})}{\partial \theta} \bigg|_{\theta = \hat{\theta}}= 435.3
+$$  
+$$
+var \bigg\{ \frac{\partial^2 \log L(\theta|\boldsymbol{x,z})}{\partial \theta} \bigg|_{\theta = \hat{\theta}} \bigg\} = 57.8
+$$  
+and therefore, the standard error of $\hat{\theta}$ is  
+$$
+\sqrt{\frac{1}{-\frac{\partial^2 \log(\theta|\boldsymbol{x})}{\partial \theta^2} \bigg|_{\theta = \hat{\theta}}}} = 0.05
+$$  
+
+
