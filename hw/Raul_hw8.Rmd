@@ -1,0 +1,238 @@
+---
+title: "Homework 8"
+author: "Raul Torres Aragon"
+date: "11/16/2023"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+load("hw8.Rdata")
+```
+
+```{r, fig.align='center', out.width="64%", echo=FALSE}
+#knitr::include_graphics("hw5_table1.png")
+```  
+
+
+
+# Q1  
+
+Two distributions that have explicit forms of the cumulative distribution function (cdf) are the logistic and Cauchy distributions. Thus, they are well-suited to the inverse transform method. For each of the following, verify the form of the cdf and then generate 10,000 random variables using the inverse transform. Compare your program with the buit-in R functions `rlogis` and `rcauchy`, respectively:  
+
+## (a)  
+
+$$
+f(x) = \frac{1}{\beta}\frac{e^{-(x-\mu)/\beta}}{\{1+e^{-(x-\mu)/\beta}\}^2} 
+$$  
+  
+$$
+F(x) = \frac{1}{1+e^{-(x-\mu)/\beta}}
+$$  
+A quick web search confirmed that indeed $F(x)$ is the cdf of $f(x)$. 
+
+By the inverse transform method:  
+$$
+\begin{aligned}
+u &= F(x) \\
+&= \frac{1}{1+e^{-(x-\mu)/\beta}}
+\end{aligned}
+$$  
+Then we solve for x:  
+
+$$
+\begin{aligned}
+u + ue^{-(x-\mu)/\beta} &= 1 \\
+e^{-(x-\mu)/\beta} &= (1-u)/u \\
+x &= \mu - \beta\log\bigg( \frac{1-u}{u}\bigg)
+\end{aligned}
+$$  
+
+```
+u <- runif(1e4, min=0, max=1)
+mu <- 1
+beta <- 1
+x_inv <- mu -beta*log((1-u)/u)
+x_r <- rlogis(1e4, location=mu, scale=beta)
+hist_x_inv <- hist(x_inv, freq = TRUE, main = "")
+hist_x_r <- hist(x_r, freq = TRUE, main = "")
+```  
+
+```{r, fig.align='center', out.width="64%", echo=FALSE}
+c1 <- rgb(173,216,230,max = 255, alpha = 80, names = "lt.blue")
+c2 <- rgb(255,192,203, max = 255, alpha = 80, names = "lt.pink")
+plot(hist_x_inv, col = c1, xlab = "x", main = "histogram of X\nunder two methods")
+plot(hist_x_r, col = c2, add = TRUE, xlab = "X")
+legend("topright", legend = c("x inv method","x rlogis"), fill = c(c1,c2))
+```  
+
+Thus we see that the inverse method does great since the overlap of histograms seems nearperfect.
+
+## (b)  
+
+$$
+f(y) = \frac{1}{\pi\sigma}\frac{1}{1+(y-\mu)^2/\sigma^2}
+$$  
+
+$$
+F(y) =\frac{1}{2} + \frac{1}{\pi} \arctan \bigg( \frac{y-\mu}{\sigma}\bigg)
+$$  
+
+A quick web search confirmed that indeed $F(y)$ is the cdf of $f(y)$. 
+
+
+By the inverse transform method:  
+
+$$
+\begin{aligned}
+F(y) &= u \\
+u &= \frac{1}{2} + \frac{1}{\pi} \arctan \bigg( \frac{y-\mu}{\sigma}\bigg)
+\end{aligned}
+$$  
+Then solving for y:  
+
+$$
+\begin{aligned}
+\pi(u - 0.5) &= \arctan\bigg( \frac{y-\mu}{\sigma}\bigg) \\
+y &= \mu + \sigma\tan[\pi (u-0.5)]
+\end{aligned}
+$$  
+```{}
+sigma <- 5
+y_inv <- mu + sigma*tan(pi*(u-.5))
+y_r <- rcauchy(1e4, location=mu, scale=sigma)
+hist_y_inv <- hist(y_inv, freq = TRUE, main = "")
+hist_y_r <- hist(y_r, freq = TRUE, main = "")
+```
+
+
+```{r, fig.align='center', out.width="64%", echo=FALSE}
+c1 <- rgb(173,216,230,max = 255, alpha = 80, names = "lt.blue")
+c2 <- rgb(255,192,203, max = 255, alpha = 80, names = "lt.pink")
+plot(hist_y_inv, col = c1, xlab = "y", main = "histogram of Y\nunder two methods")
+plot(hist_y_r, col = c2, add = TRUE, xlab = "Y")
+legend("topleft", legend = c("y inv method","y rlogis"), fill = c(c1,c2))
+```
+
+Thus we see that the inverse method does great since the overlap of histograms seems perfect.  
+
+
+# Q2  
+
+Derive uniform random variables on [0,1] corresponding to the probability density functions given below:  
+
+## (a)  
+$X \sim Weibull(\alpha, \beta)$, where $\alpha$ is the scale parameter and $\beta$ the shape parameter; that is,  
+$$
+f(x) = \frac{\beta}{\alpha^\beta}x^{\beta-1}e^{-(x/\alpha)^\beta}, \text{ } x\geq0
+$$  
+The cdf of a Weibull distributed random variable on non-negative support is (according to Wikipedia):  
+
+$$
+F(x) = 1 - e^{-(x/\alpha)^\beta}
+$$  
+Setting it equal to $u$ (a uniform random variable on [0.1], and solving for $x$ yields:  
+
+$$
+\begin{aligned}
+1-u &= e^{-(x/\alpha)^\beta} \\
+-\log(1-u) &= (x/\alpha)^\beta \\
+\alpha[-\log(1-u) ]^{1/\beta} &= x
+\end{aligned}
+$$  
+So we have that by setting $x = \alpha[-\log(1-u) ]^{1/\beta}$ with $U \sim \text{unif}(0,1)$ is equivalent to a Weibull random variable with non-negative support.  
+
+## (b)  
+
+X is distributed as follows:  
+
+$$
+f(x) =
+\begin{cases}
+       x, & 0 \leq x \leq 1 \\
+       (2-x), & 1 \leq x \le 2 \\
+       0 & x>2
+\end{cases}
+$$
+
+Then  
+$$
+F(x) =
+\begin{cases}
+       \int_0^1x dx, & 0 \leq x \leq 1 \\
+       \int_1^2 (2-x)dx, & 1 \leq x \le 2 \\
+       1 & x>2
+\end{cases}
+$$  
+
+Thus, for $0 \leq x \leq 1$
+$$ 
+\begin{aligned}
+F(X) &= u  \\
+u &= \frac{1}{2}x^2
+\end{aligned}
+$$  
+Solving for $x$ yields $x=\sqrt{2u}$.  
+
+For $1 \leq x \leq 2$  
+$$
+\begin{aligned}
+F(X) &= u  \\
+u &= 2x-\frac{1}{2}x^2
+\end{aligned}
+$$  
+Solving for $x$ yields $x=2-\sqrt{4-2u}$.  
+
+
+# Q3  
+
+Consider a density function $f(x|\theta)$ and prior distribution $\pi(\theta)$ such that the marginal $m(x) = \int f(x|\theta)\pi(\theta)d\theta$ is finite a.e. The marginal density is of use in the comparison of models since it appears in the Bayes factor.  
+
+## (a)  
+Give the general shape of an importance sampling approximation of $m$.  
+
+Recall in the importance algorithm, we multiply and divide by a function $g$, so a general form for $m$ would look like:  
+
+$$
+m(x) = \int f(x|\theta)\pi(\theta)\frac{g(\theta)}{g(\theta)}d\theta = E[f(x|\theta)\pi(\theta)/g(\theta)] = \int \frac{f(x|\theta)\pi(\theta)}{g(\theta)}dG(\theta)
+$$  
+And when sampling from it  
+$$
+\hat{m}(x) = \frac{1}{n} \sum_0^n f(x|\theta_i)\pi(\theta_i)/g(\theta_i)
+$$  
+
+
+## (b)  
+Detail this approximation when the importance function is the posterior distribution and when the normalizing constant is unknown.  
+
+Then:  
+$$
+\hat{m}(x) = n^{-1}\sum_{i=1}^n\frac{f(x|\theta_i)\pi(\theta_i)}{\frac{1}{K} f(x|\theta_i)\pi(\theta_i)}
+$$
+
+Recall the normalizing constant should make the posterior distribution add up to 1. Hence: it should be:
+
+$$
+K=\sum_{j=1}^n  f(x|\theta_j)\pi(\theta_j)
+$$  
+Substituting into the equation for $\hat{m}$ yields:  
+
+$$
+\begin{aligned}
+\hat{m}(x) &= n^{-1}\sum_{i=1}^n\frac{f(x|\theta_i)\pi(\theta_i)}{\frac{1}{\sum_0^n  f(x|\theta_j)\pi(\theta_j)}f(x|\theta_i)\pi(\theta_i)} \\
+&= \sum_{j=1}^n  f(x|\theta_j)\pi(\theta_j)n^{-1}\sum_{i=1}^n\frac{f(x|\theta_i)\pi(\theta_i)}{f(x|\theta_i)\pi(\theta_i)} \\
+&= \sum_{j=1}^n  f(x|\theta_j)\pi(\theta_j)
+\end{aligned}
+$$
+
+
+
+
+
+
+
+
+
+
+
+

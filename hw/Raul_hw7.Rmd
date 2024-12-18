@@ -1,0 +1,287 @@
+---
+title: "Homework 7"
+author: "Raul Torres Aragon"
+date: "11/3/2023"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+df <- faithful
+colors <- c("#1B9E77","#D95F02","#7570B3","#E7298A")
+#load("hw7_en.Rdata")
+```
+
+```{r, fig.align='center', out.width="64%", echo=FALSE}
+#knitr::include_graphics("hw5_table1.png")
+```  
+
+# Q1  
+
+Load the dataset *faithful* on R. Then:  
+
+## (a)  
+Estimate and plot the density of `faithful$eruptions`  
+```{r q1a, fig.align='center', out.width="64%", echo=TRUE}
+plot(density(df$eruptions), lwd = 2,
+     main="Desnsity estimation of Faithful eruptions")
+```  
+
+### (b)  
+Create a new plot and superimpose different density estimations with bandwidths equal to 0.1, 0.5, 1.0.  
+```{r q1b, fig.align='center', out.width="64%", echo=TRUE}
+plot(density(df$eruptions), lwd = 2,
+     main="Desnsity estimation of Faithful eruptions")
+density(df$eruptions, bw = 0.1) |> lines(col = colors[1])
+density(df$eruptions, bw = 0.5) |> lines(col = colors[2])
+density(df$eruptions, bw = 1.0) |> lines(col = colors[3])
+legend("topright", 
+       title="Bandwidth",
+       legend=c("0.34", "0.1", "0.5", "1.0"),  
+       fill = c("black",colors[1:3]),
+       cex = 0.6)
+```  
+
+
+### (c)  
+Get the density estimate at exactly point $x = 3.1$ using $h=0.15$ and the Epanechnikov.  
+
+```{r q1c, fig.align='center', out.width="64%", echo=FALSE}
+dens_est <- density(df$eruptions, kernel = "epanechnikov", bw = 0.15)
+dens_est_x <- mean(dens_est$y[dens_est$x>3.091 & dens_est$x<=3.109])
+plot(density(df$eruptions, kernel = "epanechnikov", bw = 0.15), 
+     lwd = 2,
+     main="Desnsity estimation ((Epanechnikov kernel) of Faithful eruptions",
+     xlab="eruptions")
+abline(v = 3.1, col="red")
+abline(h = mean(dens_est$y[dens_est$x>3.09 & dens_est$x<=3.11]), col="red")
+```  
+
+The density estimate at $x=3.1$ is `r round(dens_est_x, 3)`.  
+
+
+# Q2  
+Show that if $f(x)$ is normal $N(\mu, \sigma^2)$, then  
+$$
+\beta(f) = \int f''(x)^2dx = \frac{3\sigma^{-5}}{8\sqrt{\pi}}
+$$    
+
+First, note that for $x\sim N(\mu, \sigma^2)$, we can get its pdf, as well as its pdf's first and second derivative w.r.t. x:  
+
+$$
+\begin{aligned} 
+f(x) &= \frac{1}{\sqrt{2\pi \sigma^2}}e^{\{\frac{1}{2\sigma^2} (x-\mu)^2\}}  \\
+f'(x) &= \frac{1}{\sqrt{2\pi \sigma^2}} e^{\{\frac{1}{2\sigma^2} (x-\mu)^2\}} \frac{d}{dx}\bigg[ -\frac{1}{2}\frac{(x-\mu)^2}{2\sigma^2}\bigg] \\
+&= -\frac{(x-\mu)}{\sigma^2} f(x) \\
+f''(x) &= \bigg[-\frac{(x-\mu)}{\sigma^2}\bigg] f'(x) + f(x)-\frac{1}{\sigma^2} \\
+&= f(x) \bigg[-\frac{(x-\mu)^2}{\sigma^4} - \frac{1}{\sigma^2}\bigg]
+\end{aligned}
+$$  
+Squaring $f''(x)$ yields:  
+
+$$
+\frac{1}{2\pi\sigma^2} e^{-\frac{(x-\mu)^2}{\sigma^2}}\bigg[\frac{(x-\mu)^4}{\sigma^4}-\frac{(x-\mu)^2}{\sigma^4} + \frac{1}{\sigma^4}\bigg]
+$$  
+
+Recall that the $n$ central moment of the normal distribution is:  
+$$
+\sigma^n\int_{-\infty}^{\infty} \frac{1}{\sqrt{2\pi}}u^ne^{-\frac{u^2}{2}}du
+$$  
+where $u = (x-\mu)/\sigma$.  
+
+Thus, integrating $f''(x)^2$, we obtain the following expression:  
+
+$$
+\int_{-\infty}^{\infty}\frac{1}{2\pi\sigma^2}e^{u^2}u^2du - \frac{1}{\pi \sigma^2} 
+\int_{-\infty}^{\infty}e^uu^2/\sigma^2 du + \frac{1}{2\pi\sigma^6}
+\int_{-\infty}^{\infty} e^u du
+$$  
+After manipulating constants to express the above in terms of $f(x)$s, we can see that the first and third term are the variance and kurtosis of the normal distribution.  
+
+Thus,
+
+$$
+f''(x)^2 = \frac{3}{8}\frac{1}{\sigma^5\sqrt{\pi}} 
+$$  
+as desired. 
+
+Show explicitly that using a Gaussian kernel leads to the "normal reference rule-of-thumb" optimal bandwidth  
+$$
+h_{opt} = \bigg( \frac{4}{3n} \bigg)^{1/5} \sigma \approx 1.06\sigma n^{-1/5}
+$$  
+
+The asymptotic optimal bandwidth is obtained by:  
+
+$$
+\begin{aligned}
+\frac{d}{dh} AMISE(\hat{f}(x)) = h^3\kappa_2^2\beta(f)-\frac{R(K)}{nh^2}
+\end{aligned}
+$$  
+where $R(K) = \int K(z)^2dz$ and $\kappa_2$ is the variance of the kernel.  
+
+Solving for $h$ we get,
+
+$$
+h_{opt}^5 = \frac{R(K)\kappa^{-2}_2}{\beta(f)n}
+$$  
+
+and substituting $\kappa_2 = \sigma$ (because we're using the Gaussian kernel) and $\beta(f) = \frac{3}{8\sqrt{\pi}\sigma^5}$ per above yields:  
+
+$$
+\begin{aligned}
+h_{opt} &= \bigg[ \frac{R(K)\kappa_2^{-2}}{\beta(f)n} \bigg]^{1/5} \\
+&= \bigg[\frac{\int k(z^2)dz / \sigma}{3n/8\sigma^5\sqrt{\pi}} \bigg]^{1/5} \\
+&= \bigg[\frac{8\sigma^5\sqrt{\pi} \int k(z^2)dz}{3n\sigma} \bigg]^{1/5} \\
+&= \bigg[ \frac{8 \sigma^5 \sqrt{\pi}(2\sqrt{\pi\sigma^2})^{-1}\int e^{z^2/2}dz}{3n\sigma} \bigg]^{1/5} \\
+&= \bigg[ \frac{4\sigma^5}{3n} \bigg]^{1/5} \\
+&= \bigg[ \frac{4}{3n}\bigg]^{1/5}\sigma \\
+&\approx 1.06 \sigma n^{-1/5}
+\end{aligned} 
+$$  
+where $z = (x-\mu)/\sigma$.  
+
+
+# Q3  
+
+Find the quadratic spline interpolant for the data below:  
+```{r, fig.align='center', out.width="37%", echo=FALSE}
+knitr::include_graphics("hw7_table1.png")
+```  
+
+by assuming $z_0=0$  
+
+We want a quadratic polynomials $Q_i(x)$ passing through the above points. 
+Thus, we want:  
+$$
+Q_i(x) = a_ix^2 + b_ix + c_i = y_i
+$$  
+this yields six equations. $Q_0(x)=y_0, Q_1(x)=y_1, \dots Q_5(x)=y_5$.  
+
+We also want continuity in $Q_i'(x)$ which means:  
+$$
+Q_i'(x) = 2a_ix+b_i := 2a_{i+1}x+b_{i+1} = Q_{i+1}'(x)
+$$  
+This yields 5 equations: $Q_0'(x_{i+1}) = Q_1'(x_i)$, $Q_1'(x_{i+1}) = Q_2'(x_i)$, ... $Q_4'(x_{i+1}) = Q_5'(x_i)$.  
+
+The last condition is $Q_0''(x_0)=z_0$.  
+Together, this system of equations, allows us to obtain coefficients $a_i$, $b_i$, and $c_i$ of each $Q_i(x)$.  
+
+The following R code implements recursive expression for finding $Q_i'(x_i)=z_i$ starting from $z_0=0$.  
+
+$$
+z_{i+1} = -z_i + 2 \bigg( \frac{y_{i+1}-y_i}{x_{i+1}-x_i} \bigg)
+$$
+
+```{r}
+X = c(-1, 0, 0.5, 1, 2, 5/2)
+Y = c( 2, 1, 0.0, 1, 2, 3.0)
+
+getZ <- function(X,Y, z0 = 0) {
+  Z <- vector(mode = "numeric", length = length(Y))
+  Z[1] <- z0
+  for(i in 1:(length(Y)-1)){
+    Z[i+1] = -Z[i] + 2 * (Y[i+1] - Y[i])/(X[i+1] - X[i])
+  }
+  Z
+}
+Z <- getZ(X, Y, z0=0)
+```  
+
+Hence, $\boldsymbol{Z}$ = `r Z`, which then allows us to obtain $Q_i(x)$ as follows:  
+$$
+Q_i(x) = \frac{z_{i+1}-z_i}{2(x_{i+1}-x_i)}(x-x_i)^2+z_i(x-x_i)+y_i
+$$  
+So,
+$$
+\begin{aligned}
+Q_0(x) &= (x+1)^2+y_0 \\
+Q_1(x) &= -2x+y_1\\
+Q_2(x) &=  8(x-1/2)^2 -2(x-1/2)+ y_2\\
+Q_3(x) &= -5(x-1)^2 + 6(x-1) + y_3 \\
+Q_4(x) &= 12(x-2)^2 -4(x-2) +y_4
+\end{aligned}
+$$
+
+# Q4  
+
+Determine if the function below is a quadratic spline. Explain why or why not.  
+
+```{r fig.align='center', out.width="36%", echo=FALSE}
+knitr::include_graphics("hw7_functionQ.png")
+```
+
+For $Q(x)$ to be a quadratic spline, these conditions must hold:  
+
+- $Q$ is a polynomial of at most 2nd degree on each subinterval. This holds.  
+- $Q$ and $Q'$ are continuous on $(-\infty, \infty)$. Note:  
+$$
+\begin{aligned}
+Q_0(1) = Q_1'(1) = 1 \\
+Q_1(2) = Q_2(2) = 4 \\
+Q_0'(1) = 1, \text{ but } Q_1'(1) = 2 \\
+Q_1'(2) = Q_2'(2) = 4
+\end{aligned}
+$$  
+
+So, because $Q_0'(1) \neq Q_1'(1)$ (not continuous at interior point $x=1$), $Q(x)$ is not a quadratic spline.  
+
+
+# Q5  
+
+Determine the parameters $a, b, c, d$ and $e$ so that $S$ is a natural cubic spline.  
+```{r fig.align='center', out.width="49%", echo=FALSE}
+knitr::include_graphics("hw7_functionSx5.png")
+```
+
+For $S$ to be a cubic spline, we must have continuity at inner points for $S, S', S''$. Hence,
+
+$$
+\begin{aligned}
+S_0(1) = S_1(1) &\implies a = e -1 \\
+S_0'(1)= S_1'(1) &\implies b = 2e \\
+S_0''(1) = S_1''(1) &\implies c = e \\
+\end{aligned}
+$$  
+We also have, for natural cubic splines  
+$$
+\begin{aligned}
+0=S_0''(0) &\implies d = c/3 \\
+0=S_1''(2) &\implies e = -3
+\end{aligned}
+$$  
+Combining the expression from the cubic spline conditions yields:  
+$$
+\begin{aligned}
+a &= -4 \\
+b &= -6 \\
+c &= -3 \\
+d &= -1 \\
+e &= -3
+\end{aligned}
+$$  
+
+# Q6  
+Determine the coefficients so that the function  
+```{r fig.align='center', out.width="49%", echo=FALSE}
+knitr::include_graphics("hw7_functionSx6.png")
+```
+is a cubic spline and has property $S_1'''(x)=12$.  
+
+From the continuity conditions, as above, we have:  
+$$
+\begin{aligned}
+S_0(1) = S_1(1) &\implies a + b + c + d = 2 \\
+S_0'(1) = S_1'(1) &\implies b + 2c + 3d = 5 \\
+S_0''(1) = S_1''(1) &\implies 2c + 6d = 8 \\ 
+\end{aligned} 
+$$  
+And from property $S'''_1(x)=12$, we get $d=2$.  
+Thus,  
+$$
+\begin{aligned}
+a &= -1 \\
+b &= 3 \\
+c &= -2 \\
+d &= 2
+\end{aligned}
+$$

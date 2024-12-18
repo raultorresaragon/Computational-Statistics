@@ -1,0 +1,188 @@
+---
+title: "Homework 2"
+author: "Raul Torres Aragon"
+date: "9/16/2023"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+load("hw2_en.Rdata")
+```
+
+# Q1  
+
+From Lecture 2, the "bias-reduced" or "bias-corrected" estimator of $\mu^3$ is 
+$$
+\hat{\mu}^3_B = \bar{X}^3 - \frac{3\bar{X}\hat{\sigma}^2}{n} - \frac{\hat{\gamma}}{n^2}
+$$
+Show that the bias of this estimator is of order $\mathcal{O}(n^{-2})$  
+
+Let's first derive the expectation of $\hat{\gamma}$ as it will be needed. From slide 26 and detailed notes, we know that $\gamma = E[(X_i - \mu)^3]$, $E[(\bar{X}-\mu)^2]=var(\bar{X})=\frac{\sigma^2}{n}$, $E[(\bar{X}-\mu)^3]=\frac{\gamma}{n^2}$. So,   
+
+$$
+\begin{aligned}
+E[\hat{\gamma}] &= E[(X-\bar{X})^3] \\
+&=E\bigg[[(X-\mu)-(\bar{X}-\mu)]^3\bigg] \\
+&=E[(X-\mu)^3] -E[(\bar{X}-\mu)^3] -3E[(X-\mu)^2(\bar{X}-\mu)] -3E[(X-\mu)(\bar{X}-\mu)^2] \\
+&=\gamma -\frac{\gamma}{n^2}-3\sigma^2E[(\bar{X}-\mu)]+3E[(X-\mu)]\frac{\sigma^2}{n} \\
+&=\gamma -\frac{\gamma}{n^2} -\frac{3\gamma}{n}+\frac{3\gamma}{n^2} \\
+&=\gamma\bigg(1-\frac{3}{n} + \frac{3}{n^2}\bigg)
+\end{aligned}
+$$
+
+The bias of an estimator is $E(\hat{\theta}) - \theta$, so:  
+$$
+\begin{aligned}
+E[\hat{\mu}_B^3] - \mu^3 &= E\bigg[\bar{X}^3 - \frac{3\bar{X}\hat{\sigma}^2}{n} - \frac{\hat{\gamma}}{n^2}\bigg] - \mu^3\\
+&=E[\bar{X}^3]-\frac{3}{n}E[\bar{X}]E[\hat{\sigma^2}]-\frac{1}{n^2}E[\hat{\gamma}]-\mu^3 \\
+&=\mu^3 + \frac{3\mu\sigma^2}{n}+\frac{\gamma}{n^2}-\frac{3\mu\sigma^2}{n(n-1)} + \frac{1}{n^2}\gamma(1-\frac{3}{n}+\frac{2}{n^2}) -\mu^3 \\
+&=\frac{3\mu\sigma^2}{n}-\frac{3(n-1)\mu\sigma^2}{n^2}+\gamma (2-\frac{3}{n}+\frac{2}{n^2})\\
+&=\frac{1}{n^2}\bigg[ 3\mu\sigma^2 +\gamma (2-\frac{3}{n}+\frac{2}{n^2}) \bigg]
+\end{aligned}
+$$
+From here one can see that the bias of this estimator is of order $\mathcal{O}(n^{-2})$
+
+# Q2  
+
+Suppose $T(x)$ is an estimator of $\theta$. If the bootstrap analog $T(x^{\star})$ of $T(x)$ has distribution function $G^{\star}_n$, then derive the approximate $1 - 2\alpha$ upper and lower confidence bounds $2T(x) - g^\star_{1-\alpha}$ and $2T(x) - g^*\alpha$ of $\theta$, where $g^{\star}_{1-\alpha}$ denotes the $\alpha$-percentile of $G^\star_n$
+
+Assuming $T(x)$ is the sample estimate of the parameter $\theta$, then $T(x^*)$ is bootstrap's estimate of $T(x)$. So, for the two sided symmetric interval we have
+
+$$
+\begin{aligned}
+H(x) &= P^*\{T(x^*)_{\alpha}-T(x)\leq T(x^*)-T(x) \leq T(x^*)_{1-\alpha}-T(x)\} \\
+&= P^*\{T(x^*)_{\alpha}-T(x)\leq T(x^*)-T(x) \leq T(x^*)_{1-\alpha}-T(x)\} \\
+&= P^*\{T(x^*)_{\alpha}-T(x)\leq T(x^*)-T(x) \leq T(x^*)_{1-\alpha}-T(x)\} \\
+&= P^*\{-T(x^*)_{1-\alpha}+T(x)\leq T(x^*)-T(x) \leq -T(x^*)_{\alpha}+T(x)\} \\
+&= P^*\{-T(x^*)_{1-\alpha}+2T(x)\leq T(x^*) \leq -T(x^*)_{\alpha}+2T(x)\} \\
+&= P^*\{2T(x)-T(x^*)_{1-\alpha}\leq \theta \leq 2T(x)-T(x^*)_{\alpha}\} \\
+&= 1-2\alpha
+\end{aligned}
+$$  
+Thus, the confidence interval would be $(2T(x)-T(x^*)_{1-\alpha},2T(x)-T(x^*)_{\alpha})$.
+
+# Q3  
+Consider the Bernoulli sampling model, defined by
+$$
+P(X_i=1) = p \text{ and } P(X_i=0) = 1-p
+$$ 
+A good estimator is the sample average $\hat{p} = \bar{X} = n^{-1}\sum_{i=0}^n X_i$. Note that $E(\bar{X})=p$ and $var(\bar{X}) = n^{-1}p(1-p)$. Additionally, $X \xrightarrow N(p, p(1-p))$. Suppose interest is in estimating the odds $g(p) = p(1-p)^{-1}$. According to the Delta method:  
+
+$$
+  \sqrt{n}\bigg(g(\bar{X}) - g(p)\biggr) \xrightarrow d N[0, {g'(p)}^2var(X_i)]
+$$  
+
+$$
+\begin{aligned}
+Var[g(\bar{X})] &= \{g'(p)\}^2Var(X) \\
+&=\frac{p(1-p)}{n}\biggl[\frac{1}{(1-p)^2}\biggr]^2 \\
+&=\frac{1}{n}\frac{(1/2)^2}{(1/2)^4} \\
+&=4/n
+\end{aligned}
+$$
+
+For this problem, sample $X ~ Bernoulli(0.5)$, $i = 1, \dots , n$, with $n=1000$. Compute $\bar{X}$. Repeat this 5000 times, so that you have 5000 realizations of $g(\bar{X})$. Plot a histogram of these observations, and compare with the result from the Delta method (i.e., plot the correct curve over your histogram). Comment on the plot. Repeat for the above for $n = \{10, 30, 50, 100, 500\}$
+
+
+```
+set.seed(7625)
+rm(list = ls())
+N <- 5e3
+
+get_means <- function(n, N){
+  Xbar <- vector(mode = "numeric", length = N)
+  for(i in 1:N) {
+    Xbar[i] <- mean(rbinom(n, 1, 0.5))
+  }
+  return(Xbar)
+}
+
+run_sim <- function(n) {
+  Xbar <- get_means(n, N)
+  Odds <- Xbar/(1-Xbar)
+  return(Odds)
+}
+
+plot_hist <- function(Odds, n) {
+  Odds <- Odds[is.finite(Odds)]
+  x <- seq(min(Odds), max(Odds), length = n)
+  fun <- dnorm(x, mean=0, sd=0.004)
+  hist(Odds, main = paste0("n=",n))
+  lines(x, fun, lwd = 2)
+}
+
+for(n in c(10,30,100,500,1000)) {}
+  Odds <- run_sim(n) -1
+  empvar <- var(Odds[!is.infinite(Odds)])
+}
+
+```  
+
+```{r fig.aligned='center', out.width = '80%'}
+knitr::include_graphics("Q3_hists.jpg")
+```
+
+The histograms show that as n grows large, the distribution of $g(\bar{X})$ resembles more and more a normal distribution, with mean 0 and variance 0.004 as predicted by the Delta Method:  
+
+$$
+\begin{aligned}
+Var[g(\bar{X})] &= \{g'(p)\}^2Var(X) \\
+&=\frac{p(1-p)}{n}\biggl[\frac{1}{(1-p)^2}\biggr]^2 \\
+&=\frac{1}{n}\frac{(1/2)^2}{(1/2)^4} \\
+&=4/n
+\end{aligned}
+$$
+
+The empirical variances for n = 10,30,100,500,1000 are `r empvar_010`, `r empvar_030`, `r empvar_100`, `r empvar_500`, `r empvar_1e3` respectively.
+
+# Q4  
+
+For each of the sample sizes $n = \{10, 30, 100, 500\}$, and true parameters $p = \{0.001, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99\}$ sample $n$ Bernoulli realizations. Estimate both the expected value and the variance of $g(\bar{X})$ using Bootstrap. That is, for each sample realization, create a bootstrap distribution og $g(\bar{X})$ and estimate both the mean and the variance. For each random sample, you will creat $B$ bootstrap realizations, namely, $g(\bar{X}^*_b)$, $b=1, \dots, B$ and compute $\bar{g}^*(\bar{X})$ and $var\{\bar{g}^*(\bar{X})\}$. Take $B=100$.  
+
+```
+get_BS_stats <- function(n, X){
+  B <- data.frame(matrix(ncol = 0, nrow=n))
+  for(i in 1:100){
+    B[[paste0("B", i)]] <- X[sample(1:n, size=n, replace=TRUE)]
+  }
+  g_bar_mean <- apply(B, 2, mean) |> mean()
+  g_bar_var  <- apply(B, 2, var)  |> mean()
+  output <- list(g_bar_mean = g_bar_mean, g_bar_var = g_bar_var)
+  return (output)
+}
+
+Ps <- c(0.001,0.1,0.25,0.5,0.75,0.9,0.99)
+Ns <- c(10,30,100,500)
+
+results <- data.frame(matrix(ncol = 7, nrow(4)))
+k=0
+means <- vector(mode="numeric", length = length(Ps)*length(Ns))
+vars  <- vector(mode="numeric", length = length(Ps)*length(Ns))
+for(p in Ps) {
+  for(n in Ns) {
+    k <- k+1
+    X <- rbinom(n, 1, p)
+    o <- get_BS_stats(n, X)
+    means[k] <- o[[1]]
+    vars[k] <- o[[2]]
+  }
+}
+
+true_vars <- Ps*(1-Ps)
+results <- data.frame("Ps" = rep(Ps, each = 4), 
+                     "VARs" = rep(true_vars, each = 4),
+                     "Ns" = c(rep(Ns, 7)),
+                     "BSmean" = means,
+                     "BSvar" = vars)
+
+```
+
+```{r Q4}
+knitr::kable(results, digits = c(2,3,0,2,3))
+```
+
+We can see that as $n$ grows large, the Bootstrap estimates of the mean and variance of  our Bernoulli draws improve. Not a lot of difference between 100 and 500, which is evidence that for this example 100 Bernoulli trials are enough. However, in the extreme values of $p$ (such as 0.001 and 0.99), 500 is indeed better than 100. 
